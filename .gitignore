@@ -1,0 +1,13 @@
+/user_interface/.gradio/certificate.pem
+/config.ini
+
+# Build directories
+/dist
+/build
+/*.egg-info
+/.venv
+/.idea
+
+# Compiled files
+*.pyc
+__pycache__/
