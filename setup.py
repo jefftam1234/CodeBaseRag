@@ -14,7 +14,6 @@ setup(
     install_requires=required,
     entry_points={
         "console_scripts": [
-            "codebaserag-cli=user_interface.cli:main",
             "codebaserag-menu=main:main",
         ],
     },
