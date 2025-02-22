@@ -22,6 +22,23 @@ def list_installed_models() -> list:
     models = [line.split()[0] for line in lines[1:] if line.strip()]
     return models
 
+def list_qdrant_collections(host: str = config.DEFAULT_QDRANT_HOST, port: int = config.DEFAULT_QDRANT_PORT) -> list:
+    try:
+        client = QdrantClient(host=host, port=port)
+        response = client.get_collections()
+        # Try accessing the collections directly
+        if hasattr(response, "result"):
+            collections = [col.name for col in response.result.collections]
+        else:
+            collections = [col.name for col in response.collections]
+        # Ensure the default collection is included.
+        if config.DEFAULT_COLLECTION_NAME not in collections:
+            collections.insert(0, config.DEFAULT_COLLECTION_NAME)
+        return collections
+    except Exception as e:
+        print("Error retrieving collections:", e)
+        return [config.DEFAULT_COLLECTION_NAME]
+
 def load_documents(folder_path: str,
                    host: str = config.DEFAULT_QDRANT_HOST,
                    port: int = config.DEFAULT_QDRANT_PORT,
@@ -72,16 +89,20 @@ def build_app():
                     query_input = gr.Textbox(label="Query", placeholder="Enter your query here")
                     host_input_q = gr.Textbox(label="Qdrant Host", value=config.DEFAULT_QDRANT_HOST)
                     port_input_q = gr.Number(label="Qdrant Port", value=config.DEFAULT_QDRANT_PORT)
-                    collection_input_q = gr.Textbox(label="Collection Name", value=config.DEFAULT_COLLECTION_NAME)
-                    # The dropdown for LLM model uses the list from list_installed_models(),
-                    # defaulting to the value from config.
+                    print("\n----\n")
+                    print(list_qdrant_collections())
+                    print("\n----\n")
+                    collection_dropdown = gr.Dropdown(label="Collection",
+                                                      choices=list_qdrant_collections(),
+                                                      value=config.DEFAULT_COLLECTION_NAME)
                     model_dropdown = gr.Dropdown(label="LLM Model",
                                                  choices=list_installed_models(),
                                                  value=config.DEFAULT_LLM_MODEL)
                     query_button = gr.Button("Ask Query")
-                    query_output = gr.Textbox(label="Answer")
+                    # query_output = gr.Textbox(label="Answer")
+                    query_output = gr.Code(label="Answer", language="markdown")
                 query_button.click(fn=answer_query,
-                                   inputs=[query_input, host_input_q, port_input_q, collection_input_q, model_dropdown],
+                                   inputs=[query_input, host_input_q, port_input_q, collection_dropdown, model_dropdown],
                                    outputs=query_output)
     return demo
 

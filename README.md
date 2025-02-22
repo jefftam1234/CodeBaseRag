@@ -33,6 +33,11 @@ you can install locally with
 ```bash
 pip install .
 ```
+Then run with in the main directory
+```bash
+codebaserag-menu
+```
+
 
 or you can create a standalone executable with pyinstaller
 ```bash
