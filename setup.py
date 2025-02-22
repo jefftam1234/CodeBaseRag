@@ -11,6 +11,7 @@ setup(
     author_email="jefftam1234@gmail.com",
     url="https://github.com/jefftam1234/CodeBaseRAG",
     packages=find_packages(include=["src", "src.*", "user_interface", "user_interface.*"]),
+    py_modules=["main"],  # This tells setuptools to include main.py as a top-level module.
     install_requires=required,
     entry_points={
         "console_scripts": [
