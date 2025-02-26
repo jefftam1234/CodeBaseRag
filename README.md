@@ -1,83 +1,118 @@
+Below is your README.md with improved formatting and consistent indentation:
+
+---
+
 # CodeBaseRag: A Local RAG System for Multi-Language Codebases
 
-Welcome to **CodeBaseRag**, a local Recency-Based Aggregation (RAG) system designed for working with codebases in multiple programming languages, such as Python, R, and JavaScript. This system integrates with Qdrant for vector search and supports various document formats like PDF, HTML, and Markdown.
+**CodeBaseRag** is a local Recency-Based Aggregation (RAG) system designed to work with codebases written in Python, R, and JavaScript. It integrates with Qdrant for vector search and supports a variety of document formats, including PDF, HTML, Markdown, and JSON.
 
 ## Features
 
-- **Support Multiple Languages**: Work with codebases written in Python, R, or JavaScript.
-- **Document Formats**: Process and query documents in formats like PDF, HTML, Markdown, JSON, and more.
-- **Qdrant Integration**: Utilize Qdrant for efficient vector search and similarity-based retrieval.
-- **Local LLMs**: Leverage local pre-trained language models using LangChain and Transformers.
-- **Interactive Interface**: Access an interactive command-line interface (CLI) or Gradio-based graphical user interface (GUI).
+- **Multi-Language Support**: Works with Python, R, and JavaScript codebases.
+- **Document Processing**: Supports formats such as PDF, HTML, Markdown, JSON, and more.
+- **Qdrant Integration**: Utilizes Qdrant for efficient vector search and similarity-based retrieval.
+- **Local LLMs**: Leverages pre-trained language models through LangChain and Transformers.
+- **User Interfaces**: Choose between an interactive CLI and a Gradio-based GUI.
 
 ## Installation
 
-To install and set up CodeBaseRag, follow these steps:
-
 ### Prerequisites
-1. Ensure Python 3.8 or higher is installed.
-2. Install required dependencies:
-   ```bash
-   pip install .
-   ```
 
-### Steps to Set Up
+- Python 3.8 or higher
+- Docker installed on your system
 
-1. **Clone the Repository**:
+### Setup Steps
+
+1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/CodeBaseRag.git
+   git clone https://github.com/jefftam1234/CodeBaseRag.git
    cd CodeBaseRag
    ```
 
-you can install locally with 
-```bash
-pip install .
-```
-Then run with in the main directory
-```bash
-codebaserag-menu
-```
+2. **Install the Package**
+   - To install locally:
+     ```bash
+     pip install .
+     ```
 
-
-or you can create a standalone executable with pyinstaller
-```bash
-pip install pyinstaller
-pyinstaller --onefile main.py
-```
-
-
-2. **Create Configuration Files**:
-   - Copy `config.template.ini` to `config.ini`:
+3. **Create and Edit Configuration Files**
+   - Copy the template configuration file:
      ```bash
      cp config.template.ini config.ini
      ```
-     and then edit the config.ini to your own settings, and put it in the active directory
+   - Edit `config.ini` with your settings and place it in the active directory.
 
-3. **Configure Your Settings**:
-   - **Language-Specific Configurations**: Update parameters based on your preferred programming language (Python, R, JavaScript) in the respective language-specific configuration files.
-   - **Qdrant Configuration**: Configure Qdrant settings such as host, port, collection names, and vector dimensions in `config qdrant.ini`.
+4. **Configure Settings**
+   - **Qdrant Settings**: In `config qdrant.ini`, specify your Qdrant host, port, collection names, and vector dimensions.
+   - **Local Paths**: Adjust paths such as `DEFAULT_CODEBASE_PATH` and `DEFAULT_QDRANT_STORAGE_FOLDER` to match your environment.
 
-4. **Make sure you have Docker installed**
+5. **Run the Main Menu**
+   ```bash
+   codebaserag-menu
+   ```
 
-5. **Set Up Interactive Interface**:
-   - To access the CLI interface, run:
-     ```bash
-     codebaserag
-     ```
-   - Replace the default prompt with your custom prompt by editing `src/cli.py` and updating the `query prompt string` variable.
+   The main menu provides five options:
+   1. Convert files to text and perform chunking/splitting.
+   2. Ensure Docker is installed to run Qdrant (the vectorized database). Press “l” to launch and “k” to kill.
+   3. Push the chunked files to Qdrant.
+   4. In the GUI, choose between a command-line and a graphical interface. The GUI lets you select your installed LLM and the collection (the pushed code base).
+   5. Load any available configuration files; launching the main code again will use the selected configuration.
 
-## Using the Interactive CLI or GUI
+## Running the Application
 
 ### CLI Interface
 
-- Launch the CLI by running `codebaserag`.
-- Enter your queries one by one, pressing '/exit' to return to the main menu.
-- Each query will trigger a request to Qdrant for relevant documents and an interaction with the LLM model specified in your configuration.
+- Launch the CLI by running:
+  ```bash
+  codebaserag
+  ```
+- Enter your queries one at a time. Use `/exit` to return to the main menu.
+- Each query triggers a vector search in Qdrant and interacts with the configured local LLM.
 
+### GUI Interface (Gradio)
 
+- Launch the Gradio-based GUI according to your configuration.
 
-### maintain requirement
+## Configuration Template
+
+Below is an excerpt from the `config.template.ini` to help you get started:
+
+```ini
+[DEFAULT]
+# Qdrant settings
+DEFAULT_QDRANT_HOST = localhost
+DEFAULT_QDRANT_PORT = 6333
+
+# Collection name for Qdrant (required)
+DEFAULT_COLLECTION_NAME = your_code_base
+
+# Paths (required)
+DEFAULT_CODEBASE_PATH = /home/your_code_base
+# These paths are computed at runtime:
+# DEFAULT_CONVERTED_PATH = <computed at runtime>
+# DEFAULT_DOCS_PICKLE = <computed at runtime>
+# DEFAULT_CHUNKS_PICKLE = <computed at runtime>
+
+# Qdrant storage folder (required)
+DEFAULT_QDRANT_STORAGE_FOLDER = /home/qdrant_storage
+# DEFAULT_CONTAINER_ID_FILE is computed at runtime.
+
+# LLM model: Set your default LLM model here.
+DEFAULT_LLM_MODEL = your_llm:latest
+# Alternative models:
+# DEFAULT_LLM_MODEL = deepseek-r1:latest
+# DEFAULT_LLM_MODEL = codellama:7b
+
+# Gradio settings
+DEFAULT_GRADIO_SHARE = False
+DEFAULT_GRADIO_SERVER_NAME = 0.0.0.0
+DEFAULT_GRADIO_SERVER_PORT = 7860
 ```
-pip install pipreqs
-pipreqs . --force
-```
+
+## Maintain Requirements
+
+- Install and run pipreqs to generate or update your requirements file:
+  ```bash
+  pip install pipreqs
+  pipreqs . --force
+  ```
