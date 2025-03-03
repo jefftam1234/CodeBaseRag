@@ -8,9 +8,9 @@ from src.llm import OllamaLLM
 
 # Register an exit handler to free GPU memory.
 def free_gpu_memory():
-    print("Cleaning up Ollama instance...")
-    llm_instance = OllamaLLM.get_instance()
-    atexit.register(llm_instance._cleanup)
+    # print("Cleaning up Ollama instance...")
+    # llm_instance = OllamaLLM.get_instance()
+    # atexit.register(llm_instance._cleanup)   # does not work for now
     print("Cleaning up GPU memory...")
     torch.cuda.empty_cache()
 
