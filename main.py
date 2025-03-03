@@ -1,7 +1,20 @@
 #!/usr/bin/env python3
 import subprocess
 import os
+import atexit
+import torch
 from user_interface.config import config, load_config_from_ini, overwrite_config_ini, display_current_config
+from src.llm import OllamaLLM
+
+# Register an exit handler to free GPU memory.
+def free_gpu_memory():
+    print("Cleaning up Ollama instance...")
+    llm_instance = OllamaLLM.get_instance()
+    atexit.register(llm_instance._cleanup)
+    print("Cleaning up GPU memory...")
+    torch.cuda.empty_cache()
+
+atexit.register(free_gpu_memory)
 
 def prepare_codebase():
     """
@@ -18,7 +31,16 @@ def prepare_codebase():
         print("Running loader...")
         subprocess.run(["python", "src/loader.py", "--src", config.DEFAULT_CONVERTED_PATH, "--dst", config.DEFAULT_DOCS_PICKLE], check=True)
         print("Running splitter...")
-        subprocess.run(["python", "src/splitter.py", "--input", config.DEFAULT_DOCS_PICKLE, "--output", config.DEFAULT_CHUNKS_PICKLE], check=True)
+        subprocess.run(
+            [
+                "python", "src/splitter.py",
+                "--input", config.DEFAULT_DOCS_PICKLE,
+                "--output", config.DEFAULT_CHUNKS_PICKLE,
+                "--chunk_size", str(config.CHUNK_SIZE),
+                "--chunk_overlap", str(config.CHUNK_OVERLAP)
+            ] + (["--language_splitting"] if config.LANGUAGE_AWARE_SPLITTING else []),
+            check=True
+        )
         print("Preparation complete.\n")
     except subprocess.CalledProcessError as e:
         print("An error occurred during preparation:", e)

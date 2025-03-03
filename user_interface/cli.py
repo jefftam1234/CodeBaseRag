@@ -23,7 +23,8 @@ def query(query: str, host: str, port: int, collection_name: str, model: str, su
     )
 
     # Create a retriever from the vector store
-    retriever = qdrant_store.as_retriever(search_kwargs={"k": 3})
+    retriever = qdrant_store.as_retriever(search_kwargs={"k": config.RETRIEVER_K})
+
 
     # Get the custom LLM singleton instance using the model from config or command line.
     llm = OllamaLLM.get_instance(model, verbose=not suppress_output)

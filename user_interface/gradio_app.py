@@ -69,7 +69,7 @@ def answer_query(query: str,
         collection_name=collection,
         embedding=embeddings
     )
-    retriever = qdrant_store.as_retriever(search_kwargs={"k": 3})
+    retriever = qdrant_store.as_retriever(search_kwargs={"k": config.RETRIEVER_K})
     llm = OllamaLLM.get_instance(model)
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,

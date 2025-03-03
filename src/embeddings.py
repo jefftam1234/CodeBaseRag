@@ -8,7 +8,9 @@ def get_embeddings(suppress_output: bool = False):
     if not suppress_output:
         print(f"Using device: {device}")
     embeddings = HuggingFaceEmbeddings(
-        model_name="BAAI/bge-small-en-v1.5",
+        #model_name="BAAI/bge-base-en-v1.5",
+        model_name="all-mpnet-base-v2",
+        #TODO: use https://huggingface.co/microsoft/unixcoder-base
         model_kwargs={"device": device}
     )
     return embeddings

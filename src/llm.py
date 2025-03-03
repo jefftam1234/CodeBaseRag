@@ -6,6 +6,8 @@ import argparse
 from user_interface.config import config
 from pydantic import Field, model_validator
 
+#TODO: Garbage collector, or use Ollama python API
+
 class OllamaLLM(LLM):
     # Declare the model field so Pydantic knows about it.
     model: str = Field(..., description="The Ollama model to use.")

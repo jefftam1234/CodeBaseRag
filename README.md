@@ -6,6 +6,10 @@ Below is your README.md with improved formatting and consistent indentation:
 
 **CodeBaseRag** is a local Recency-Based Aggregation (RAG) system designed to work with codebases written in Python, R, and JavaScript. It integrates with Qdrant for vector search and supports a variety of document formats, including PDF, HTML, Markdown, and JSON.
 
+## Be aware
+- Currently it does not free the Ollama instance upon exit of the program. This is a known issue and will be fixed in the future.
+Right now you have to manually kill the process after use to free up GPU VRAM.
+
 ## Features
 
 - **Multi-Language Support**: Works with Python, R, and JavaScript codebases.
@@ -103,11 +107,28 @@ DEFAULT_LLM_MODEL = your_llm:latest
 # DEFAULT_LLM_MODEL = deepseek-r1:latest
 # DEFAULT_LLM_MODEL = codellama:7b
 
+# New parameters for splitting and retrieval:
+LANGUAGE_AWARE_SPLITTING = True
+CODEBASE_LANGUAGES = cpp  # Specify languages in a comma-separated list
+CHUNK_SIZE = 1500
+CHUNK_OVERLAP = 150
+RETRIEVER_K = 10
+
 # Gradio settings
 DEFAULT_GRADIO_SHARE = False
 DEFAULT_GRADIO_SERVER_NAME = 0.0.0.0
 DEFAULT_GRADIO_SERVER_PORT = 7860
 ```
+### **Fine-Tuning Based on Your Use Case**
+
+- If your code base consists of **many small functions/classes**, you may want:
+    - **CHUNK_SIZE: ~1200**
+    - **CHUNK_OVERLAP: ~200**
+    - **RETRIEVER_K: 8**
+- If your code base has **large, complex functions with interdependencies**:
+    - **CHUNK_SIZE: ~1800**
+    - **CHUNK_OVERLAP: ~250**
+    - **RETRIEVER_K: 12-15**
 
 ## Maintain Requirements
 
