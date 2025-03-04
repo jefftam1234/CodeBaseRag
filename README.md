@@ -6,10 +6,6 @@ Below is your README.md with improved formatting and consistent indentation:
 
 **CodeBaseRag** is a local Recency-Based Aggregation (RAG) system designed to work with codebases written in Python, R, and JavaScript. It integrates with Qdrant for vector search and supports a variety of document formats, including PDF, HTML, Markdown, and JSON.
 
-## Be aware
-- Currently it does not free the Ollama instance upon exit of the program. This is a known issue and will be fixed in the future.
-Right now you have to manually kill the process after use to free up GPU VRAM.
-
 ## Features
 
 - **Multi-Language Support**: Works with Python, R, and JavaScript codebases.
