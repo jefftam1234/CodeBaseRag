@@ -2,11 +2,10 @@
 import argparse
 import atexit
 import os
-import signal
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import requests
 import subprocess
 import time
-import os
 import signal
 import psutil
 from typing import Optional, List

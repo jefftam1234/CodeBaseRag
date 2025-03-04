@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import subprocess
 import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import atexit
 import torch
 from user_interface.config import config, load_config_from_ini, overwrite_config_ini, display_current_config
