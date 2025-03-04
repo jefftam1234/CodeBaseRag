@@ -24,6 +24,7 @@ class AppConfig(BaseModel):
     DEFAULT_GRADIO_SHARE: bool = Field(False)
     DEFAULT_GRADIO_SERVER_NAME: str = Field("0.0.0.0")
     DEFAULT_GRADIO_SERVER_PORT: int = Field(7860)
+    DEFAULT_OLLAMA_HOST: str = Field("http://localhost:11434")
 
     # New fields for retrieval and splitting tuning:
     LANGUAGE_AWARE_SPLITTING: bool = Field(True, description="Enable language-aware splitting")

@@ -1,19 +1,48 @@
 #!/usr/bin/env python3
-import subprocess
-from langchain.llms.base import LLM
-from typing import Optional, List
 import argparse
-from user_interface.config import config
-from pydantic import Field, model_validator
+import atexit
+import os
+import signal
+import requests
+import subprocess
+import time
+import os
+import signal
+import psutil
+from typing import Optional, List
 
-#TODO: Garbage collector, or use Ollama python API
+from langchain.llms.base import LLM
+from pydantic import Field, PrivateAttr, model_validator
+from user_interface.config import config
+import ollama
+
+
+
+def kill_process_tree(pid, sig=signal.SIGTERM):
+    try:
+        parent = psutil.Process(pid)
+    except psutil.NoSuchProcess:
+        return
+    # Recursively get all children
+    children = parent.children(recursive=True)
+    for child in children:
+        try:
+            child.kill()
+        except psutil.NoSuchProcess:
+            pass
+    try:
+        parent.kill()
+    except psutil.NoSuchProcess:
+        pass
+
 
 class OllamaLLM(LLM):
-    # Declare the model field so Pydantic knows about it.
+    # The model field is used by Pydantic for validation.
     model: str = Field(..., description="The Ollama model to use.")
-
-    # A class-level flag to control printing (default False means print)
+    # Class-level flag to control printing (False means print by default)
     _suppress_print: bool = False
+    # Private attribute to hold the server process
+    _server_process: Optional[subprocess.Popen] = PrivateAttr(None)
 
     @model_validator(mode="after")
     def print_model(self) -> "OllamaLLM":
@@ -22,13 +51,8 @@ class OllamaLLM(LLM):
         return self
 
     def _call(self, prompt: str, stop: Optional[List[str]] = None) -> str:
-        result = subprocess.run(
-            ["ollama", "run", self.model],
-            input=prompt,
-            capture_output=True,
-            text=True
-        )
-        return result.stdout.strip()
+        response = ollama.generate(model=self.model, prompt=prompt)
+        return response.get('response', '').strip()
 
     @property
     def _identifying_params(self):
@@ -39,39 +63,81 @@ class OllamaLLM(LLM):
         return "ollama"
 
     @classmethod
-    def get_instance(cls, model: Optional[str] = None, verbose: bool = True):
+    def get_instance(cls, model: Optional[str] = None, verbose: bool = True, start_server: bool = True):
         """
         Returns the singleton instance of OllamaLLM.
-        If no instance exists, it is created using the provided model
-        (or the default from config).
-        The `verbose` flag controls whether the model is printed on instantiation.
+        If no instance exists, it is created using the provided model (or the default from config).
+        If start_server is True, it will start the Ollama server in a separate process group.
         """
         if not hasattr(cls, "_instance") or cls._instance is None:
             if model is None:
                 model = config.DEFAULT_LLM_MODEL
-            # Set the class-level flag based on verbose
             cls._suppress_print = not verbose
-            cls._instance = cls(model=model)
-            # Optionally reset the flag after instantiation if you want future calls to print.
-            # For example:
-            # cls._suppress_print = False
+            instance = cls(model=model)
+            if start_server:
+                print("Starting Ollama server...")
+                instance._server_process = subprocess.Popen(
+                    ["ollama", "serve"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    preexec_fn=os.setsid  # Start in a new process group
+                )
+                # Allow the server time to start
+                time.sleep(5)
+                # Register cleanup handler to terminate the process group on exit.
+                atexit.register(cls.cleanup_instance)
+            cls._instance = instance
         return cls._instance
 
     @classmethod
-    def get_llm(cls, model: Optional[str] = None, verbose: bool = True):
-        return cls.get_instance(model, verbose)
+    def get_llm(cls, model: Optional[str] = None, verbose: bool = True, start_server: bool = True):
+        return cls.get_instance(model=model, verbose=verbose, start_server=start_server)
+
+    def unload_model(self) -> bool:
+        """
+        Instructs the Ollama server to unload this model by setting keep_alive to 0.
+        Returns True if the request was successful.
+        """
+        host_url = config.DEFAULT_OLLAMA_HOST
+        url = f"{host_url}/api/generate"
+        payload = {"model": self.model, "keep_alive": 0}
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            print(f"Model {self.model} unloaded successfully.")
+            return True
+        except requests.RequestException as e:
+            print("Error unloading model:", e)
+            return False
+
+    @classmethod
+    def cleanup_instance(cls):
+        """
+        First sends a request to unload the model (freeing VRAM), then cleans up the server process.
+        """
+        if hasattr(cls, "_instance") and cls._instance is not None:
+            instance = cls._instance
+            # Unload the model from Ollama
+            instance.unload_model()
+            # Now clean up the server process (using psutil-based cleanup as needed)
+            if instance._server_process is not None:
+                print("Recursively terminating Ollama server process tree...")
+                kill_process_tree(instance._server_process.pid, sig=signal.SIGTERM)
+                try:
+                    instance._server_process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    kill_process_tree(instance._server_process.pid, sig=signal.SIGKILL)
+                instance._server_process = None
+            cls._instance = None
 
     @staticmethod
     def list_installed_llms():
-        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
-        if result.returncode != 0:
-            print("Error listing installed LLM models:")
-            print(result.stderr)
-            return
+        result = ollama.list()
         print("Installed LLM models:")
-        print(result.stdout)
+        print(result)
         print("\nUse one of the above model names in your config file as DEFAULT_LLM_MODEL (or override with --model).")
 
+# Example usage as a standalone script:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ollama LLM Helper (Singleton)")
     parser.add_argument("--list", action="store_true", help="List installed LLM models.")
@@ -84,8 +150,8 @@ if __name__ == "__main__":
         OllamaLLM.list_installed_llms()
     elif args.prompt:
         llm = OllamaLLM.get_llm(args.model, verbose=not args.quiet)
-        # Using invoke() per the new LangChain API
         response = llm.invoke(args.prompt)
         print("Response:", response)
     else:
         parser.print_help()
+    OllamaLLM.cleanup_instance()

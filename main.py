@@ -4,13 +4,9 @@ import os
 import atexit
 import torch
 from user_interface.config import config, load_config_from_ini, overwrite_config_ini, display_current_config
-from src.llm import OllamaLLM
 
 # Register an exit handler to free GPU memory.
 def free_gpu_memory():
-    # print("Cleaning up Ollama instance...")
-    # llm_instance = OllamaLLM.get_instance()
-    # atexit.register(llm_instance._cleanup)   # does not work for now
     print("Cleaning up GPU memory...")
     torch.cuda.empty_cache()
 
